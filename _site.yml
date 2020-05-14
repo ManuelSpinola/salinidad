@@ -1,8 +1,19 @@
-name: "my-website"
+name: salinidad
+output_dir: "."
 navbar:
-  title: "My Website"
-  left:
-    - text: "Home"
-      href: index.html
-    - text: "Código"
-      href: codigo.html
+  title: "Salinidad"
+  type: inverse
+  right:
+  - text: "Inicio"
+    icon: fa-home
+    href: index.html
+  - text: "Código"
+    icon: fa-code
+    menu:
+    - text: "Código 01"
+      href: codigo_01.html
+    - text: "Código_02"
+      href: dist.html
+output:
+  html_document:
+    theme: cosmo
