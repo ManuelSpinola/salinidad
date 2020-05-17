@@ -41,10 +41,6 @@ rasters <- read_stars(raster_list)
 
 
 ```{r}
-rasters <- st_transform(rasters, crs = 5367)
-```
-
-```{r}
 rasters
 ```
 
