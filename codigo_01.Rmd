@@ -36,7 +36,7 @@ raster_list
 
 
 ```{r}
-rasters <- read_stars("01_datos/prueba/CHAGSW7.tif")
+rasters <- read_stars("01_datos/prueba/B02CHE3.tif")
 ```
 
 
@@ -92,6 +92,7 @@ plot(r)
 raster_list <- list.files(path = "01_datos/prueba", full.names = TRUE)
 ```
 
+
 ```{r}
 s <- stack(raster_list)
 ```
@@ -114,6 +115,9 @@ s_crop <- crop(s, cr)
 s_mask <- mask(s_crop, cr)
 ```
 
+```{r}
+plot(s_mask)
+```
 
 
 
