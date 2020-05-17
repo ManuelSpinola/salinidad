@@ -27,13 +27,15 @@ head(sal)
 ```
 
 ```{r}
-raster_list <- list.files(path = "01_datos/soilgrids", full.names = TRUE)
+raster_list <- list.files(path = "01_datos/covs", full.names = TRUE)
 ```
 
 ```{r}
 raster_list
 ```
 
+
+### stars
 
 ```{r}
 rasters <- read_stars(raster_list)
@@ -52,11 +54,6 @@ cr <- st_read("01_datos/mask/CR_cg.gpkg")
 st_crs(cr)
 ```
 
-
-```{r}
-plot(cr["AREA"], axes = TRUE)
-```
-
 ```{r}
 plot(rasters, axes = TRUE)
 ```
@@ -66,21 +63,12 @@ plot(rasters, axes = TRUE)
 rasters_mask <- rasters[cr, crop = TRUE]
 ```
 
-
 ```{r}
-plot(rasters_mask, axes = TRUE)
+plot(rasters_mask[100], axes = TRUE)
 ```
 
 
-```{r}
-r <- read_stars("01_datos/covs/B02CHE3.tif")
-```
-
-
-
-```{r}
-plot(r)
-```
+***
 
 ### terra
 
@@ -98,12 +86,6 @@ s
 ```
 
 ```{r}
-crs = "+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +units=m +no_defs"
-s <- projectRaster(s, crs = crs)   
-```
-
-
-```{r}
 s_crop <- crop(s, cr)
 ```
 
@@ -115,21 +97,7 @@ s_mask <- mask(s_crop, cr)
 plot(s_mask)
 ```
 
-```{r}
-ca <- read_stars("01_datos/prueba/wc2.0_bio_30s_01.tif")
-```
 
-
-```{r}
-cr_02 <- st_read("01_datos/mask/CR_cg.gpkg")
-```
-```{r}
-rasters_mask <- ca[cr_02, crop = TRUE]
-```
-
-```{r}
-plot(rasters_mask)
-```
 
 
 
