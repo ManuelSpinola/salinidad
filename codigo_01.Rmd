@@ -7,22 +7,111 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rio)
+library(sf)
+library(stars)
+library(raster)
+library(terra)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+sal <- import("01_datos/Conductividad_electrica.csv")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+head(sal)
+```
+
+```{r}
+raster_list <- list.files(path = "01_datos/prueba", full.names = TRUE)
+```
+
+```{r}
+raster_list
+```
+
+
+```{r}
+rasters <- read_stars(raster_list)
+```
+
+
+```{r}
+rasters <- st_transform(rasters, crs = 5367)
+```
+
+```{r}
+rasters
+```
+
+
+```{r}
+cr <- st_read("01_datos/mask/CR_crtm05.gpkg")
+```
+```{r}
+st_crs(cr)
+```
+
+
+```{r}
+plot(cr["AREA"], axes = TRUE)
+```
+
+```{r}
+plot(rasters, axes = TRUE)
+```
+
+
+```{r}
+rasters_mask <- rasters[cr, crop = TRUE]
+```
+
+
+```{r}
+plot(rasters_mask, axes = TRUE)
+```
+
+
+```{r}
+r <- read_stars("01_datos/covs/B02CHE3.tif")
+```
+
+
+
+```{r}
+plot(r)
+```
+
+### terra
+
+```{r}
+raster_list <- list.files(path = "01_datos/prueba", full.names = TRUE)
+```
+
+```{r}
+s <- stack(raster_list)
+```
+
+```{r}
+s
+```
+
+```{r}
+crs = "+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +units=m +no_defs"
+s <- projectRaster(s, crs = crs)   
+```
+
+
+```{r}
+s_crop <- crop(s, cr)
+```
+
+```{r}
+s_mask <- mask(s_crop, cr)
+```
+
+

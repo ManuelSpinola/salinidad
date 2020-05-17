@@ -1,4 +1,4 @@
-name: salinidad
+name: "salinidad"
 output_dir: "docs"
 navbar:
   title: "Salinidad"
