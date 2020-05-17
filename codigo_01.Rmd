@@ -43,7 +43,7 @@ rasters <- read_stars(raster_list)
 
 
 ```{r}
-rasters
+rasters[20]
 ```
 
 
@@ -64,7 +64,7 @@ rasters_mask <- rasters[cr, crop = TRUE]
 ```
 
 ```{r}
-plot(rasters_mask[100], axes = TRUE)
+plot(rasters_mask[10], axes = TRUE)
 ```
 
 
