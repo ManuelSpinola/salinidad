@@ -1,5 +1,5 @@
 name: salinidad
-output_dir: "."
+output_dir: "docs"
 navbar:
   title: "Salinidad"
   type: inverse
