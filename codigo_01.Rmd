@@ -36,7 +36,7 @@ raster_list
 
 
 ```{r}
-rasters <- read_stars(raster_list)
+rasters <- read_stars("01_datos/prueba/CHAGSW7.tif")
 ```
 
 
@@ -113,5 +113,9 @@ s_crop <- crop(s, cr)
 ```{r}
 s_mask <- mask(s_crop, cr)
 ```
+
+
+
+
 
 
