@@ -27,7 +27,7 @@ head(sal)
 ```
 
 ```{r}
-raster_list <- list.files(path = "01_datos/prueba", full.names = TRUE)
+raster_list <- list.files(path = "01_datos/soilgrids", full.names = TRUE)
 ```
 
 ```{r}
@@ -36,7 +36,7 @@ raster_list
 
 
 ```{r}
-rasters <- read_stars("01_datos/prueba/B02CHE3.tif")
+rasters <- read_stars(raster_list)
 ```
 
 
@@ -50,7 +50,7 @@ rasters
 
 
 ```{r}
-cr <- st_read("01_datos/mask/CR_crtm05.gpkg")
+cr <- st_read("01_datos/mask/CR_cg.gpkg")
 ```
 ```{r}
 st_crs(cr)
@@ -119,7 +119,21 @@ s_mask <- mask(s_crop, cr)
 plot(s_mask)
 ```
 
+```{r}
+ca <- read_stars("01_datos/prueba/wc2.0_bio_30s_01.tif")
+```
 
+
+```{r}
+cr_02 <- st_read("01_datos/mask/CR_cg.gpkg")
+```
+```{r}
+rasters_mask <- ca[cr_02, crop = TRUE]
+```
+
+```{r}
+plot(rasters_mask)
+```
 
 
 
