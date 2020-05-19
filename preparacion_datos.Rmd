@@ -1,0 +1,179 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rio)
+library(sf)
+library(stars)
+library(raster)
+library(rasterVis)
+library(terra)
+library(SDMtune)
+library(sdmpredictors)
+library(ENMTools)
+library(caret)
+```
+
+
+```{r}
+sal <- import("01_datos/Conductividad_electrica.csv")
+```
+
+```{r}
+head(sal)
+```
+
+### stars
+
+```{r}
+cr <- st_read("01_datos/mask/CR_cg.gpkg")
+```
+
+```{r}
+st_crs(cr)
+```
+
+
+```{r}
+raster_list <- list.files(path = "01_datos/covs_todas", full.names = TRUE)
+```
+
+```{r}
+raster_list
+```
+
+
+```{r}
+rasters <- read_stars(raster_list)
+```
+
+
+```{r}
+rasters[48]
+```
+
+
+```{r}
+plot(rasters, axes = TRUE)
+```
+
+
+```{r}
+rasters_mask <- rasters[cr, crop = TRUE]
+```
+
+```{r}
+plot(rasters_mask[48], axes = TRUE)
+```
+
+```{r}
+r48 <- rasters_mask[48]
+```
+
+```{r}
+r48
+```
+
+
+```{r}
+ggplot() + geom_stars(data = r48)
+```
+
+
+***
+
+### terra (raster)
+
+```{r}
+cr_terra <- vect("01_datos/mask/CR_cg.gpkg")
+```
+
+```{r}
+raster_list <- list.files(path = "01_datos/covs_todas", full.names = TRUE)
+```
+
+
+```{r}
+s <- rast(raster_list)
+```
+
+```{r}
+s
+```
+
+```{r}
+s_crop <- crop(s, cr_terra)
+```
+
+```{r}
+s_mask <- mask(s_crop, cr_terra)
+```
+
+
+```{r}
+s_mask
+```
+
+```{r}
+plot(s_mask[[48]])
+```
+
+```{r}
+r48 <- read_stars("01_datos/covs_todas/C04MCF5.tif")
+```
+
+```{r}
+r48
+```
+
+
+```{r}
+plot(r48)
+```
+
+```{r}
+rt48 <- rast("01_datos/covs_todas/C04MCF5.tif")
+```
+
+```{r}
+rt48
+```
+
+
+```{r}
+plot(rt48)
+```
+
+
+```{r}
+raster.cor.matrix(s_mask)
+```
+
+
+### caret
+
+```{r}
+ctrl <- rfeControl(functions = lmFuncs,
+                   method = "repeatedcv",
+                   repeats = 5,
+                   verbose = FALSE)
+```
+
+
+```{r}
+lmProfile <- rfe(x, y,
+                 sizes = subsets,
+                 rfeControl = ctrl)
+```
+
+
+
+
