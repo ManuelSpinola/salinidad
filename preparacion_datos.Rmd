@@ -13,6 +13,7 @@ library(tidyverse)
 library(rio)
 library(sf)
 library(stars)
+library(sp)
 library(raster)
 library(rasterVis)
 library(terra)
@@ -20,6 +21,7 @@ library(SDMtune)
 library(sdmpredictors)
 library(ENMTools)
 library(caret)
+library(mapview)
 ```
 
 
@@ -30,20 +32,70 @@ sal <- import("01_datos/Conductividad_electrica.csv")
 ```{r}
 head(sal)
 ```
+```{r}
+sal_sf <- st_as_sf(sal,
+                   coords = c("x", "y"),
+                   crs = 5367)
+```
+
+```{r}
+mapview(sal_sf)
+```
+
+
+```{r}
+st_write(sal_sf, "01_datos/sal.shp")
+```
+
+```{r}
+sal <- st_read("01_datos/sal.shp")
+```
+
+```{r}
+sal_cg <- st_transform(sal, crs = 4326)
+```
+
+
+```{r}
+st_write(sal_cg, "01_datos/sal_cg.shp")
+```
+```{r}
+mapview(sal)
+```
+
+```{r}
+sal_vect <- vect("01_datos/sal.shp")
+```
+
+```{r}
+crs <- "+proj=longlat +datum=WGS84 +no_defs"
+```
+
+```{r}
+cr_vect <- vect("01_datos/mask/CR_cg.gpkg")
+```
+
+```{r}
+sal_vect_cg <- project(sal_vect, cr_vect)
+```
+
+```{r}
+sal_vect_cg
+```
+
+
 ***
 
 ### terra (raster)
 
 ```{r}
-cr_terra <- vect("01_datos/mask/CR_crtm05.gpkg")
+cr_terra_crtm05 <- vect("01_datos/mask/CR_crtm05.gpkg")
+cr_terra_cg <- vect("01_datos/mask/CR_cg.gpkg")
 ```
 
 ```{r}
-plot(cr_terra)
-```
-
-```{r}
-cr_terra
+cr <- shapefile("01_datos/mask/Costa_Rica_CRTM05.shp")
+crs(cr)
 ```
 
 ```{r}
@@ -52,7 +104,7 @@ rasters_list <- list.files(path = "01_datos/covs_todas", full.names = TRUE)
 
 
 ```{r}
-s <- stack(rasters_list)
+s <- rast(rasters_list)
 ```
 
 ```{r}
@@ -60,28 +112,12 @@ s
 ```
 
 ```{r}
-newcrs <- "+proj=tmerc +lat_0=0 +lon_0=-84 +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+s_crop <- crop(s, cr_terra_cg)
 ```
 
 
 ```{r}
-b <- rast(nrow=686, ncol=546, xmin=-87.10198, xmax=-82.55151, ymin=5.49909, ymax=11.21682, crs=newcrs)
-```
-
-```{r}
-crs(s) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
-```
-
-```{r}
-s_proy <- project(s, b)
-```
-
-```{r}
-s_crop <- crop(s, cr_terra)
-```
-
-```{r}
-s_mask <- mask(s_crop, cr_terra)
+s_mask <- mask(s_crop, cr_terra_cg)
 ```
 
 
@@ -90,8 +126,9 @@ s_mask
 ```
 
 ```{r}
-plot(s_mask[[48]])
+variables <- extract(s_mask, sal_sp_cg)
 ```
+
 
 
 ```{r}
@@ -163,7 +200,6 @@ rasters <- read_stars(rasters_list)
 cr_stars <- st_read("01_datos/mask/CR_cg.gpkg")
 ```
 
-
 ```{r}
 plot(cr_stars)
 ```
@@ -174,7 +210,7 @@ rasters_mask <- rasters[cr_stars]
 ```
 
 ```{r}
-plot(rasters_mask)
+write_stars(rasters_mask, "02_rasters/rasters_mask.tif")
 ```
 
 ```{r}
@@ -188,6 +224,11 @@ st_crs(rasters_p)
 ```{r}
 plot(rasters_p, axes = TRUE)
 ```
+
+```{r}
+names(rasters_p)
+```
+
 
 ```{r}
 r001 <- rasters_p[48]
@@ -212,14 +253,66 @@ ggplot() + geom_stars(data = r001) +
 ### Extracción de variables
 
 ```{r}
-cr_crtm05 <- st_read("01_datos/mask/CR_crtm05.gpkg")
+sal_sf <- st_as_sf(sal,
+                   coords = c("x", "y"),
+                   crs = 5367)
 ```
 
 
 ```{r}
-variables <- st_extract(rasters_p, cr_stars)
+sal_sf_cg <- st_transform(sal_sf, crs = 4326)
 ```
 
+```{r}
+plot(sal_sf_cg)
+```
+
+
+```{r}
+st_crs(sal_sf_cg)
+```
+
+```{r}
+variables <- st_extract(rasters_mask, sal_sf_cg)
+```
+
+```{r}
+variables
+```
+
+```{r}
+variables %>% st_as_sf()
+```
+
+### raster
+
+```{r}
+sal_cg <- shapefile("01_datos/sal_cg.shp")
+```
+
+```{r}
+sal_cg@coords
+```
+
+```{r}
+rasters_list <- list.files(path = "01_datos/covs_todas", full.names = TRUE)
+```
+
+```{r}
+s <- stack(rasters_list)
+```
+
+```{r}
+s
+```
+
+```{r}
+variables <- extract(s, sal_cg, df = TRUE)
+```
+
+```{r}
+summary(variables)
+```
 
 
 ### caret
