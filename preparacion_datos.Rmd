@@ -26,61 +26,15 @@ library(mapview)
 
 
 ```{r}
-sal <- import("01_datos/Conductividad_electrica.csv")
+sal_crtm05 <- st_read("01_datos/Conductividad_electrica_cr05.shp")
 ```
 
 ```{r}
-head(sal)
-```
-```{r}
-sal_sf <- st_as_sf(sal,
-                   coords = c("x", "y"),
-                   crs = 5367)
+sal_crtm05
 ```
 
 ```{r}
-mapview(sal_sf)
-```
-
-
-```{r}
-st_write(sal_sf, "01_datos/sal.shp")
-```
-
-```{r}
-sal <- st_read("01_datos/sal.shp")
-```
-
-```{r}
-sal_cg <- st_transform(sal, crs = 4326)
-```
-
-
-```{r}
-st_write(sal_cg, "01_datos/sal_cg.shp")
-```
-```{r}
-mapview(sal)
-```
-
-```{r}
-sal_vect <- vect("01_datos/sal.shp")
-```
-
-```{r}
-crs <- "+proj=longlat +datum=WGS84 +no_defs"
-```
-
-```{r}
-cr_vect <- vect("01_datos/mask/CR_cg.gpkg")
-```
-
-```{r}
-sal_vect_cg <- project(sal_vect, cr_vect)
-```
-
-```{r}
-sal_vect_cg
+sal_cg <- st_transform(sal_crtm05, crs = 4326)
 ```
 
 
@@ -97,6 +51,16 @@ cr_terra_cg <- vect("01_datos/mask/CR_cg.gpkg")
 cr <- shapefile("01_datos/mask/Costa_Rica_CRTM05.shp")
 crs(cr)
 ```
+
+```{r}
+sal_terra_crtm05 <- vect("01_datos/Conductividad_electrica_cr05.shp")
+```
+
+```{r}
+crs <- "+proj=longlat +datum=WGS84"
+sal_terra_cg <- project(sal_terra_crtm05, crs = crs)
+```
+
 
 ```{r}
 rasters_list <- list.files(path = "01_datos/covs_todas", full.names = TRUE)
@@ -197,16 +161,21 @@ rasters <- read_stars(rasters_list)
 ```
 
 ```{r}
-cr_stars <- st_read("01_datos/mask/CR_cg.gpkg")
-```
-
-```{r}
-plot(cr_stars)
+rasters
 ```
 
 
 ```{r}
-rasters_mask <- rasters[cr_stars]
+cr_cg <- st_read("01_datos/mask/CR_cg.gpkg")
+```
+
+```{r}
+plot(cr_cg)
+```
+
+
+```{r}
+rasters_mask <- rasters[cr_cg]
 ```
 
 ```{r}
@@ -222,58 +191,37 @@ st_crs(rasters_p)
 ```
 
 ```{r}
-plot(rasters_p, axes = TRUE)
+plot(ra, axes = TRUE)
+plot(cr_cg["AREA"], axes = TRUE)
 ```
-
-```{r}
-names(rasters_p)
-```
-
-
-```{r}
-r001 <- rasters_p[48]
-```
-
-```{r}
-plot(r001)
-```
-
-
-```{r}
-ggplot() + geom_stars(data = r001) +
-    coord_equal() +
-    theme_void() +
-    scale_x_discrete(expand=c(0,0))+
-    scale_y_discrete(expand=c(0,0))
-```
-
 
 ***
 
 ### Extracción de variables
 
 ```{r}
-sal_sf <- st_as_sf(sal,
-                   coords = c("x", "y"),
-                   crs = 5367)
+ra <- read_stars("01_datos/covs_todas/AWCh1_M_sl1_1km_ll.tif")
+rb <- read_stars("01_datos/covs_todas/AWCh1_M_sl2_1km_ll.tif")
+```
+
+```{r}
+comb <- read_stars(c("01_datos/covs_todas/AWCh1_M_sl1_1km_ll.tif", "01_datos/covs_todas/AWCh1_M_sl2_1km_ll.tif"))
+```
+
+```{r}
+comb
 ```
 
 
 ```{r}
-sal_sf_cg <- st_transform(sal_sf, crs = 4326)
+variables <- st_extract(comb, sal_cg)
+```
+```{r}
+variables %>% st_as_sf()
 ```
 
 ```{r}
-plot(sal_sf_cg)
-```
-
-
-```{r}
-st_crs(sal_sf_cg)
-```
-
-```{r}
-variables <- st_extract(rasters_mask, sal_sf_cg)
+variables <- st_extract(rasters, sal_cg)
 ```
 
 ```{r}
@@ -283,16 +231,21 @@ variables
 ```{r}
 variables %>% st_as_sf()
 ```
+```{r}
+variables
+```
+
 
 ### raster
 
 ```{r}
-sal_cg <- shapefile("01_datos/sal_cg.shp")
+sal_raster_crtm05 <- shapefile("01_datos/Conductividad_electrica_cr05.shp")
 ```
 
 ```{r}
-sal_cg@coords
+sal_raster_cg <- spTransform(sal_raster_crtm05, CRS("+proj=longlat +datum=WGS84"))
 ```
+
 
 ```{r}
 rasters_list <- list.files(path = "01_datos/covs_todas", full.names = TRUE)
@@ -307,12 +260,17 @@ s
 ```
 
 ```{r}
-variables <- extract(s, sal_cg, df = TRUE)
+variables <- extract(s, sal_raster_cg, df = TRUE)
 ```
 
 ```{r}
-summary(variables)
+variables
 ```
+
+```{r}
+export(variables, "02_predictores/predictores.xlsx")
+```
+
 
 
 ### caret
