@@ -291,4 +291,51 @@ lmProfile <- rfe(x, y,
 
 
 
+```{r}
+library(sf)
+library(stars)
+```
+
+```{r}
+m <- "https://github.com/ManuelSpinola/salinidad/blob/master/sal_cg.gpkg"
+sal_cg <- st_read(m)
+```
+
+
+```{r}
+r1 <- "https://github.com/ManuelSpinola/salinidad/blob/master/B02CHE3.tif"
+
+r2 <- "https://github.com/ManuelSpinola/salinidad/blob/master/B04CHE3.tif"
+
+a <- read_stars(c(r1, r2))
+```
+
+
+```{r}
+m <- st_read("01_datos/sal_cg.gpkg")
+```
+
+```{r}
+a <- read_stars(c("01_datos/covs_todas/B02CHE3.tif", "01_datos/covs_todas/B02CHE3.tif"))
+```
+
+
+```{r}
+variables <- st_extract(a, m)
+```
+
+
+```{r}
+variables
+```
+
+
+```{r}
+variables %>% st_as_sf()
+```
+
+```{r}
+variables
+```
+
 
