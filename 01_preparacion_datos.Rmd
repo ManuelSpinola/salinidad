@@ -1,0 +1,324 @@
+---
+title: "Preparación de los datos"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rio)
+library(sf)
+library(stars)
+library(rgdal)
+library(sp)
+library(raster)
+library(rasterVis)
+library(terra)
+library(SDMtune)
+library(sdmpredictors)
+library(ENMTools)
+library(caret)
+library(mapview)
+```
+
+### terra
+
+```{r}
+cr_mask_terra <- rast("01_datos/mask/mask.tif")
+```
+
+```{r}
+plot(cr_mask_terra)
+```
+
+```{r}
+cr_mask_terra
+```
+
+```{r}
+rasters_list <- list.files(path = "01_datos/covs_todas", full.names = TRUE)
+```
+
+
+```{r}
+s <- rast(rasters_list)
+```
+
+```{r}
+s
+```
+
+```{r}
+plot(s, 150)
+```
+
+
+```{r}
+raster.cor.matrix(s_mask)
+```
+
+
+***
+
+### stars
+
+
+```{r}
+rasters_list <- list.files(path = "01_datos/covs_todas", full.names = TRUE)
+```
+
+```{r}
+rasters <- read_stars(rasters_list)
+```
+
+
+```{r}
+rasters
+```
+
+```{r}
+plot(rasters[150])
+```
+
+
+```{r}
+cr_cg <- st_read("01_datos/mask/CR_cg.gpkg")
+```
+
+```{r}
+plot(cr_cg)
+```
+
+
+```{r}
+rasters_mask <- rasters[cr_cg]
+```
+
+```{r}
+write_stars(rasters_mask, "02_rasters/rasters_mask.tif")
+```
+
+```{r}
+rasters_p <- st_transform(rasters_mask, crs = 5367)
+```
+
+```{r}
+st_crs(rasters_p)
+```
+
+```{r}
+plot(ra, axes = TRUE)
+plot(cr_cg["AREA"], axes = TRUE)
+```
+
+***
+
+### Extracción de variables
+
+```{r}
+ra <- read_stars("01_datos/covs_todas/AWCh1_M_sl1_1km_ll.tif")
+rb <- read_stars("01_datos/covs_todas/AWCh1_M_sl2_1km_ll.tif")
+```
+
+```{r}
+comb <- read_stars(c("01_datos/covs_todas/AWCh1_M_sl1_1km_ll.tif", "01_datos/covs_todas/AWCh1_M_sl2_1km_ll.tif"))
+```
+
+```{r}
+comb
+```
+
+
+```{r}
+variables <- st_extract(comb, sal_cg)
+```
+```{r}
+variables %>% st_as_sf()
+```
+
+```{r}
+variables <- st_extract(rasters, sal_cg)
+```
+
+```{r}
+variables
+```
+
+```{r}
+variables %>% st_as_sf()
+```
+```{r}
+variables
+```
+
+
+### raster
+
+```{r}
+sal_crtm05 <- st_read("01_datos/Conductividad_electrica_cr05.shp")
+```
+
+```{r}
+sal_cg <- st_transform(sal_crtm05, crs = 4326)
+```
+
+
+
+
+
+
+
+```{r}
+plot(r2)
+```
+
+
+
+```{r}
+plot(dem1, axes = TRUE)
+```
+
+
+```{r}
+dem_stack <- read_stars(c(dem1, dem2b))
+```
+
+
+```{r}
+dem_stack <- read_stars(c(dem1, dem2b, dem2c, dem2d, dem3a, dem3b, dem3c, dem3d, dem4.1a, dem4.1b, dem4.2a, dem5a, dem5b))
+```
+
+
+```{r}
+r <- 
+```
+
+
+```{r}
+plot(dem_stack, axes = TRUE)
+```
+
+
+```{r}
+cr_crtm05 <- st_read("01_datos/mask/CR_crtm05.gpkg")
+cr_cg <- st_read("01_datos/mask/CR_cg.gpkg")
+```
+
+```{r}
+crs(dem_stack)
+```
+
+```{r}
+dem_mask <- dem_stack[cr_crtm05]
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+rasters_list <- list.files(path = "01_datos/covs_todas", full.names = TRUE)
+```
+
+```{r}
+s <- stack(rasters_list)
+```
+
+```{r}
+s
+```
+
+```{r}
+variables <- extract(s, sal_raster_cg, df = TRUE)
+```
+
+```{r}
+variables
+```
+
+```{r}
+
+```
+
+
+```{r}
+export(variables, "02_predictores/predictores.xlsx")
+```
+
+
+
+### caret
+
+
+```{r}
+library(sf)
+library(stars)
+```
+
+```{r}
+m <- "https://github.com/ManuelSpinola/salinidad/blob/master/sal_cg.gpkg"
+sal_cg <- st_read(m)
+```
+
+
+```{r}
+r1 <- "https://github.com/ManuelSpinola/salinidad/blob/master/B02CHE3.tif"
+
+r2 <- "https://github.com/ManuelSpinola/salinidad/blob/master/B04CHE3.tif"
+
+a <- read_stars(c(r1, r2))
+```
+
+
+```{r}
+m <- st_read("01_datos/sal_cg.gpkg")
+```
+
+```{r}
+a <- read_stars(c("01_datos/covs_todas/B02CHE3.tif", "01_datos/covs_todas/B02CHE3.tif"))
+```
+
+
+```{r}
+variables <- st_extract(a, m)
+```
+
+
+```{r}
+variables
+```
+
+
+```{r}
+variables %>% st_as_sf()
+```
+
+```{r}
+variables
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

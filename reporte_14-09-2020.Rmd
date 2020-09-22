@@ -1,0 +1,97 @@
+---
+title: "Mapeo digital del ph entre 0-30 cm"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+library(tidyverse)
+library(rio)
+library(CAST)
+library(caret)
+library(raster)
+library(terra)
+library(sf)
+library(stars)
+library(visdat)
+library(DataExplorer)
+library(mlr3)
+library(mlr3learners)
+library(mlr3filters)
+library(mlr3measures)
+library(Boruta)
+library(MDFS)
+library(gam)
+library(tanaka)
+library(viridis)
+library(beepr)
+```
+
+<br>
+<br>
+<br>
+
+Para el modelaje del ph entre 0-30 cm se utilizaron inicialmente 478 variables.
+
+1. Se realizó una selección inicial y se obtuvieron 71 variables (de las 478 iniciales).
+
+2. Con las 71 variables se realizó un random forest y se seleccionaron las variables con una importancia igual o superior al 80 %. Esto permitió seleccionar 21 variables.
+
+3. Con las 21 variables se hizo un random forest con selección hacia adelante y se obtuvo el modelo final que seleccionó 5 variables:
+
+- B07CHE3
+- P03CHE3
+- BLDFIE_M_sl3_1km_ll
+- P01CHE3
+- C04MCF5
+
+
+```{r, include=FALSE}
+raster_ph_0_30 <- read_stars("05_mapas_finales/mapa_ph_0_30.tif")
+```
+
+
+```{r, echo=FALSE}
+ggplot() + geom_stars(data = raster_ph_0_30) +
+  coord_equal() +
+  theme_minimal() +
+  scale_fill_viridis_c(name = "pH", na.value = "transparent")
+```
+
+```{r, include=FALSE}
+raster_ph_0_30_tanaka <- raster("05_mapas_finales/mapa_ph_0_30.tif")
+```
+
+```{r, echo=FALSE}
+tanaka(raster_ph_0_30_tanaka, legend.title = "pH", col = inferno(12))
+```
+
+Métricas del modelo:
+
+RMSE: 0.63
+R_cuadrado: 0.11
+MAE: 0.49     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

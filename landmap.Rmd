@@ -1,0 +1,64 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rio)
+library(sf)
+library(stars)
+library(rgdal)
+library(raster)
+library(rasterVis)
+library(terra)
+library(randomForest)
+library(ranger)
+library(caret)
+library(DALEX)
+library(ingredients)
+library(auditor)
+library(colorDF)
+library(landmap)
+```
+
+
+```{r}
+ce <- import("03_variables_modelos/ce_df.xlsx")
+```
+
+```{r}
+head(ce)
+```
+
+
+```{r}
+ce <- dplyr::select(ce, ce, C04MCF5, OCSTHA_M_sd6_1km_ll, TAXNWRB_Fibric.Histosols_1km_ll, M06MOD4, TAXNWRB_Plinthic.Acrisols_1km_ll)
+```
+
+```{r}
+cr_cg <- shapefile("01_datos/mask/Cr_wgs84_meso.shp")
+```
+
+
+```{r}
+rasters_list <- list.files(path = "03_variables_modelos/rasters", full.names = TRUE)
+```
+
+
+```{r}
+m <- train.spLearner(meuse["lead"], covariates=meuse.grid[,c("dist","ffreq")], lambda = 1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

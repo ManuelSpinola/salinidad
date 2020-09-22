@@ -1,0 +1,88 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+library(rio)
+library(GSIF)
+library(aqp)
+```
+
+```{r}
+ph <- import("01_datos/datos_ph_cr.xlsx")
+```
+
+```{r}
+ph$id <- as.character(ph$id)
+```
+
+```{r}
+ph$sitio <- "cr"
+```
+
+
+
+```{r}
+ph
+```
+
+
+```{r}
+sb <- import("01_datos/datos_sb_cr.xlsx")
+```
+
+```{r}
+sb$id <- as.character(sb$id)
+```
+
+
+```{r}
+sb <- dplyr::select(sb, id, x, y, pi, pf, sb)
+```
+
+```{r}
+sb$sitio <- "cr"
+```
+
+### Splines
+
+```{r}
+ph_prof <- ph
+```
+
+```{r}
+depths(ph_prof) <- id ~ pi + pf
+```
+
+```{r}
+ph_prof
+```
+
+
+```{r}
+site(ph_prof) <- ~ x + y + sitio
+```
+
+```{r}
+sb_prof <- sb
+```
+
+```{r}
+depths(sb_prof) <- id ~ pi + pf
+```
+
+```{r}
+site(sb_prof) <- ~ x + y + sitio
+```
+
+```{r}
+sp1
+```
+
+
+
+
+

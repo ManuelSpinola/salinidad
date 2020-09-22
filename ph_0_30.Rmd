@@ -1,0 +1,539 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rio)
+library(CAST)
+library(caret)
+library(raster)
+library(terra)
+library(sf)
+library(stars)
+library(visdat)
+library(DataExplorer)
+library(mlr3)
+library(mlr3learners)
+library(mlr3filters)
+library(mlr3measures)
+library(Boruta)
+library(MDFS)
+library(gam)
+library(ranger)
+library(SpatialML)
+library(spm)
+library(landmap)
+library(beepr)
+```
+
+
+```{r}
+ph_0_30 <- import("01_datos/s_ph_0_30.xlsx")
+```
+
+
+```{r}
+head(ph_0_30)
+```
+
+```{r}
+colnames(ph_0_30) <- c("ID", "x", "y", "ph")
+```
+
+
+```{r}
+ph_0_30_sp <- st_as_sf(ph_0_30, coords = c("x", "y"), crs = 4326)
+```
+
+
+```{r}
+plot(ph_0_30_sp)
+```
+
+```{r}
+rasters_list <- list.files(path = "01_datos/covs_todas", full.names = TRUE)
+```
+
+```{r}
+s <- stack(rasters_list)
+```
+
+```{r}
+s
+```
+
+
+```{r}
+ph_0_30_extract <- extract(s, ph_0_30[, c("x", "y")], df = TRUE)
+```
+
+
+```{r}
+head(ph_0_30_extract)
+```
+
+```{r}
+dim(ph_0_30)
+dim(ph_0_30_extract)
+```
+
+```{r}
+summary(ph_0_30$ID)
+summary(ph_0_30_extract$ID)
+```
+
+```{r}
+ph_0_30_join <- full_join(ph_0_30, ph_0_30_extract, by = "ID")
+```
+
+```{r}
+summary(ph_0_30_join$ID)
+```
+
+```{r}
+plot_missing(ph_0_30_join)
+```
+
+```{r}
+ph_0_30_join <- na.omit(ph_0_30_join)
+```
+
+```{r}
+dim(ph_0_30_join)
+```
+
+```{r}
+export(ph_0_30_join, file = "02_datos_extraidos/ph_0_30_extraido.xlsx")
+```
+
+
+```{r}
+ph_0_30_df <- import("02_datos_extraidos/ph_0_30_extraido.xlsx")
+```
+
+```{r}
+head(ph_0_30_df)
+```
+
+```{r}
+dim(ph_0_30_df)
+```
+
+```{r}
+ph_0_30_df_xy <- data.frame(ph_0_30_df$x, ph_0_30_df$y)
+```
+
+```{r}
+colnames(ph_0_30_df_xy) <- c("x", "y")
+```
+
+```{r}
+head(ph_0_30_df_xy)
+```
+
+
+
+```{r}
+ph_0_30_para_boruta <- dplyr::select(ph_0_30_df, -ID, -x, -y)
+```
+
+```{r}
+ID <- dplyr::select(ph_0_30_df, ID)
+```
+
+
+```{r}
+predictores_ph_0_30 <- dplyr::select(ph_0_30_df, -ID, -x, -y, -ph)
+```
+
+```{r}
+y_ph_0_30 <- dplyr::select(ph_0_30_df, ph)
+```
+
+### Boruta primera selección
+
+```{r}
+set.seed(123)
+ph_0_30_boruta <- Boruta(ph ~. , data = ph_0_30_para_boruta, doTrace = 2)
+beep(sound = 4)
+```
+
+```{r}
+print(ph_0_30_boruta)
+```
+
+```{r}
+getConfirmedFormula(ph_0_30_boruta)
+```
+```{r}
+ph_0_30_boruta_seleccionado <- getSelectedAttributes(ph_0_30_boruta, withTentative = FALSE)
+```
+
+```{r}
+ph_0_30_boruta_seleccionado
+```
+
+
+```{r}
+ph_0_30_boruta_final <- dplyr::select(ph_0_30_para_boruta, one_of(ph_0_30_boruta_seleccionado))
+```
+
+```{r}
+ph_0_30_boruta_final
+```
+
+```{r}
+ph_0_30_boruta_final <- bind_cols(ID, y, ph_0_30_boruta_final)
+```
+
+```{r}
+ph_0_30_boruta_final$ID <- as.character(ph_0_30_boruta_final$ID)
+```
+
+```{r}
+ph_0_30_boruta_final
+```
+
+```{r}
+predictores_boruta_ph_0_30 <- dplyr::select(ph_0_30_boruta_final, -ID, -ph)
+```
+
+```{r}
+y_boruta_ph_0_30 <- dplyr::select(ph_0_30_boruta_final, ph)
+```
+
+### CAST
+
+```{r}
+set.seed(10)
+indices <- CreateSpacetimeFolds(ph_0_30_boruta_final, spacevar = "ID", k = 5)
+```
+
+
+```{r}
+modelo_LLO_ph_0_30 <- train(predictores_boruta_ph_0_30, y_boruta_ph_0_30$ph,
+               method = "rf", 
+               importance = TRUE,
+               trControl=trainControl(method = "cv",
+                                      index = indices$index))
+beep(sound = 4)
+```
+
+
+```{r}
+modelo_LLO_ph_0_30
+```
+
+
+```{r}
+ffsmodelo_LLO_ph_0_30 <- ffs(predictores_boruta_ph_0_30, y_boruta_ph_0_30$ph,
+                             metric = "Rsquared",
+                             method = "rf",
+                             importance = TRUE,
+                             trControl = trainControl(method = "cv",
+                                                      index = indices$index))
+beep(sound = 4)
+```
+
+```{r}
+ffsmodelo_LLO_ph_0_30
+```
+
+```{r}
+ffsmodelo_LLO_ph_0_30$selectedvars
+```
+"SNDPPT_M_sl7_1km_ll" "VW4MOD1"            
+ [3] "BLDFIE_M_sl1_1km_ll" "VW5MOD1"            
+ [5] "P02CHE3"             "CLYPPT_M_sl3_1km_ll"
+ [7] "VW2MOD1"             "SNDPPT_M_sl6_1km_ll"
+ [9] "AWCh2_M_sl3_1km_ll"  "SNDPPT_M_sl3_1km_ll"
+ 
+
+```{r}
+plot_ffs(ffsmodelo_LLO_ph_0_30)
+```
+
+
+```{r}
+prediction_ffsmodelo_LLO_ph_0_30 <- predict(s, ffsmodelo_LLO_ph_0_30)
+```
+
+
+```{r}
+plot(prediction_ffsmodelo_LLO_ph_0_30)
+```
+
+```{r}
+writeRaster(prediction_ffsmodelo_LLO_ph_0_30, file = "05_mapas_finales/mapa_ph_0_30.tif")
+```
+
+```{r}
+raster_ph_0_30 <- read_stars("05_mapas_finales/mapa_ph_0_30.tif")
+```
+
+
+```{r}
+ggplot() + geom_stars(data = raster_ph_0_30) +
+  coord_equal() +
+  theme_minimal() +
+  scale_fill_viridis_c(name = "pH", na.value = "transparent")
+```
+
+```{r}
+AOA_ph_0_30 <- aoa(s, ffsmodelo_LLO_ph_0_30)
+```
+
+```{r}
+AOA_ph_0_30
+```
+
+```{r}
+plot(AOA_ph_0_30)
+```
+
+
+```{r}
+writeRaster(AOA_ph_0_30$AOA, file = "05_mapas_finales/aoa_mapa_ph_0_30.tif")
+```
+
+```{r}
+writeRaster(AOA_ph_0_30$DI, file = "05_mapas_finales/di_mapa_ph_0_30.tif")
+```
+
+c("#FFFFFF", "#FFFFFF", "#FFFFFF")
+```{r}
+raster_aoa_ph_0_30 <- read_stars("05_mapas_finales/aoa_mapa_ph_0_30.tif")
+```
+
+
+```{r}
+ggplot() + geom_stars(data = raster_aoa_ph_0_30) +
+  coord_equal() +
+  theme_minimal() +
+  scale_fill_viridis_c(name = "pH", na.value = "transparent")
+```
+
+
+### RFE
+
+
+```{r}
+control <- rfeControl(functions = rfFuncs,
+                      method = "cv",
+                      number = 10,
+                      verbose = FALSE)
+```
+
+
+
+```{r}
+set.seed(200)
+ph_0_30_seleccion_rfe <- rfe(predictores_boruta_ph_0_30, y_boruta_ph_0_30$ph, sizes = c(2:50), rfeControl = control)
+beep(sound = 4)
+```
+
+```{r}
+ph_0_30_seleccion_rfe
+```
+
+```{r}
+plot(ph_0_30_seleccion_rfe, type=c("g", "o"))
+```
+
+
+
+```{r}
+ffsmodel <- ffs(predictores, ph_0_30_df$ph)
+```
+
+
+```{r}
+a <- c("one", "two")
+class(a)
+```
+
+### caret
+
+```{r}
+ph_0_30_rf_caret <- caret::train(predictores_boruta_ph_0_30,
+                                 y_boruta_ph_0_30$ph,
+                                 method = "rf",
+                                 control = trainControl(method = "cv"))
+```
+
+```{r}
+ph_0_30_rf_caret
+```
+
+```{r}
+plot(ph_0_30_rf_caret)
+```
+
+```{r}
+vi_ph_0_30_rf_caret <- caret::varImp(ph_0_30_rf_caret)
+vi_ph_0_30_rf_caret$importance
+```
+
+```{r}
+plot(vi_ph_0_30_rf_caret)
+```
+
+### filtrar las variables más importantes
+
+```{r}
+var_mayor_80 <- filter(vi_ph_0_30_rf_caret$importance, Overall >= 80) 
+```
+
+```{r}
+var_mayor_80
+```
+
+```{r}
+var_mayor_80 <- rownames_to_column(var_mayor_80, var = "variable")
+```
+
+
+```{r}
+var_mayor_80
+```
+
+```{r}
+ph_0_30_reduced <- dplyr::select(ph_0_30_para_boruta, all_of(var_mayor_80$variable))
+```
+
+```{r}
+ph_0_30_reduced
+```
+
+```{r}
+ph_0_30_reduced <- bind_cols(ID, ph_0_30_df_xy, y_boruta_ph_0_30, ph_0_30_reduced)
+```
+
+```{r}
+head(ph_0_30_reduced)
+```
+
+
+
+```{r}
+set.seed(10)
+indices <- CreateSpacetimeFolds(ph_0_30_reduced, spacevar = "ID", k = 5)
+```
+
+Sin forward selection
+
+```{r}
+modelo_LLO_ph_0_30 <- train(ph_0_30_reduced[, c(5:25)],
+                            ph_0_30_reduced$ph,
+                            method = "rf",
+                            importance = TRUE,
+                            trControl = trainControl(method="cv",
+                                                     index = indices$index))
+beep(sound = 4)
+```
+
+
+```{r}
+modelo_LLO_ph_0_30
+```
+
+
+con forward selection
+
+```{r}
+ffsmodelo_LLO_ph_0_30 <- ffs(ph_0_30_reduced[, c(5:25)], ph_0_30_reduced$ph,
+                             metric = "Rsquared",
+                             method = "rf",
+                             importance = TRUE,
+                             trControl = trainControl(method = "cv",
+                                                      index = indices$index))
+beep(sound = 4)
+```
+
+
+```{r}
+ffsmodelo_LLO_ph_0_30
+```
+118 extensión santa barbara 2269-7065, 6396, 9633
+
+```{r}
+ffsmodelo_LLO_ph_0_30$selectedvars
+```
+
+
+```{r}
+prediccion_ffsmodelo_LLO_ph_0_30 <- raster::predict(s, ffsmodelo_LLO_ph_0_30)
+```
+
+
+```{r}
+spplot(prediccion_ffsmodelo_LLO_ph_0_30)
+```
+
+
+```{r}
+writeRaster(prediccion_ffsmodelo_LLO_ph_0_30, file = "05_mapas_finales/mapa_ph_0_30.tif", overwrite = TRUE)
+```
+
+```{r}
+raster_ph_0_30 <- read_stars("05_mapas_finales/mapa_ph_0_30.tif")
+```
+
+
+```{r}
+ggplot() + geom_stars(data = raster_ph_0_30) +
+  coord_equal() +
+  theme_minimal() +
+  scale_fill_viridis_c(name = "pH", na.value = "transparent")
+```
+
+```{r}
+
+```
+
+
+### spm
+
+```{r}
+ph_0_30_boruta_final_df_completo <- bind_cols(ph_0_30_df_xy, ph_0_30_boruta_final)
+```
+
+
+```{r}
+dim(ph_0_30_boruta_final_df_completo)
+```
+
+```{r}
+head(ph_0_30_boruta_final_df_completo)
+```
+
+
+
+```{r}
+set.seed(1234) 
+rfokcv1 <- rfokcv(ph_0_30_boruta_final_df_completo[, c(1,2)], ph_0_30_boruta_final_df_completo[, c(1,2, 4:75)], ph_0_30_boruta_final_df_completo[, 4], predacc = "VEcv")
+```
+
+
+```{r}
+rfokcv1
+```
+
+```{r}
+s_spdf <- as(s, "SpatialPixelsDataFrame")
+```
+
+
+```{r}
+m <- train.spLearner(meuse["lead"], covariates = s_spdf[,c("dist","ffreq")], lambda = 1)
+```
+
+
+
+
+
+
+

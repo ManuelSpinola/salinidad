@@ -1,0 +1,295 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rio)
+library(corrgrapher)
+library(mcvis)
+library(corrr)
+library(correlation)
+library(inspectdf)
+library(sf)
+library(caret)
+library(FSelector)
+library(randomForest)
+library(Boruta)
+library(DALEX)
+library(ingredients)
+```
+
+
+```{r}
+sal_crtm05 <- st_read("01_datos/Conductividad_electrica_cr05.shp")
+```
+
+```{r}
+var <- import("02_datos_extraidos/predictores.xlsx")
+```
+
+
+```{r}
+ce_sp <- cbind(sal_crtm05$x, sal_crtm05$y, sal_crtm05$ce, var)
+```
+
+```{r}
+ce_sp <- ce_sp[, -4]
+```
+
+
+```{r}
+head(ce_sp)
+```
+
+```{r}
+colnames(ce_sp)[c(1,2,3)] <- c("x", "y", "ce")
+```
+
+```{r}
+head(ce_sp)
+```
+
+```{r}
+ce_sp <- na.omit(ce_sp)
+```
+
+
+```{r}
+dim(ce_sp)
+```
+
+```{r}
+export(ce_sp, "03_variables_modelos/ce_sp.xlsx")
+```
+
+
+```{r}
+ce_df <- ce_sp[, c(3, 4:431) ]
+```
+
+
+```{r}
+head(ce_df)
+```
+```{r}
+export(ce_df, "03_variables_modelos/ce_df.xlsx")
+```
+
+
+### rfe (recursive feature elimination)
+
+```{r}
+y <- ce_df[, 1]
+```
+
+
+```{r}
+head(y)
+```
+
+```{r}
+x = ce_df[, 2:429]
+```
+
+```{r}
+head(x)
+```
+
+```{r}
+control <- rfeControl(functions = rfFuncs, method = "cv", number = 10)
+```
+
+
+```{r}
+set.seed(200)
+results <- rfe(x, y, sizes = c(2:25, 30, 35, 40, 45, 50, 55, 60, 65), rfeControl = control)
+```
+
+
+```{r}
+results
+```
+
+C04MCF5
+OCSTHA_M_sd6_1km_ll
+TAXNWRB_Fibric.Histosols_1km_ll
+M06MOD4
+TAXNWRB_Plinthic.Acrisols_1km_ll
+
+### FSelector
+
+```{r}
+ig <- information.gain(ce ~., datos_df)
+```
+
+```{r}
+ggplot(ig, aes(attr_importance)) +
+  geom_histogram()
+```
+
+```{r}
+ig <- ig %>% filter(attr_importance > 0.05)
+```
+
+```{r}
+ig
+```
+
+
+```{r}
+arrange(ig, desc(attr_importance))
+```
+
+
+### Machine learning algorithm
+
+```{r}
+set.seed(100)
+rfmod <- randomForest(ce ~ ., data = ce_df, importance = TRUE)
+```
+
+
+```{r}
+rfimp <- varImp(rfmod)
+```
+
+
+```{r}
+varImpPlot(rfmod, type = 1)
+```
+
+```{r}
+arrange(rfimp, desc(Overall))
+```
+
+### DALEX
+
+```{r}
+e_rf <- explain(rfmod, data = ce_df, y = ce_df$ce)
+```
+
+
+```{r}
+dalex_imp <- feature_importance(e_rf, type = "raw")
+```
+
+```{r}
+dalex_imp <- data.frame(dalex_imp)
+```
+
+```{r}
+dalex_imp
+```
+
+
+```{r}
+arrange(dalex_imp, desc(mean_dropout_loss))
+```
+
+
+```{r}
+var <- var[, -1]
+```
+
+
+```{r}
+head(var)
+```
+
+```{r}
+var$F03USG5
+```
+
+```{r}
+var$QUAUEA3
+```
+
+```{r}
+var <- var %>% dplyr::select(!c(F03USG5, QUAUEA3))
+```
+
+```{r}
+dim(var)
+```
+
+```{r}
+head(var)
+```
+
+
+```{r}
+cr_01 <- correlate(var)
+```
+
+```{r}
+cr_01
+```
+
+```{r}
+cr_02 <- correlation(var)
+```
+
+```{r}
+cr_03 <- inspect_cor(var)
+```
+
+
+```{r}
+cr_03
+```
+
+```{r}
+names(cr_03)
+```
+
+
+```{r}
+cr_03 <- cr_03 %>% filter(p_value > 0.05)
+```
+
+
+```{r}
+cr_03
+```
+
+
+```{r}
+rst <- raster("01_datos/covs_todas/F03USG5.tif")
+```
+
+
+```{r}
+plot(rst)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

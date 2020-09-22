@@ -1,0 +1,68 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(rio)
+library(sf)
+library(stars)
+library(rgdal)
+library(raster)
+library(rasterVis)
+library(terra)
+library(randomForest)
+library(ranger)
+library(caret)
+library(DALEX)
+library(ingredients)
+library(auditor)
+library(colorDF)
+library(labgeo)
+```
+
+
+```{r}
+vt = train_test(ce, y = ce$ce,  p = 0.75, seed = 311)
+```
+
+
+```{r}
+train = vt$train
+test = vt$test
+```
+
+
+```{r}
+fit = run_models(df = train, 
+                 formula = as.formula('ce ~ . '), 
+                 models = c("lm", "rf"),
+                 rsample = 'cv', nfolds = 10,
+                seed = 123,  cpu_cores = 4)
+```
+
+
+```{r}
+perf = run_models_performance(fit_run_model = fit, df_valida = test, verbose = T)
+```
+
+```{r}
+
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+
+
+
+
+
