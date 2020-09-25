@@ -26,6 +26,8 @@ library(ranger)
 library(SpatialML)
 library(spm)
 library(landmap)
+library(Cubist)
+library(mlr)
 library(beepr)
 ```
 
@@ -45,13 +47,22 @@ colnames(ph_0_30) <- c("ID", "x", "y", "ph")
 
 
 ```{r}
-ph_0_30_sp <- st_as_sf(ph_0_30, coords = c("x", "y"), crs = 4326)
+ph_0_30_sf <- st_as_sf(ph_0_30, coords = c("x", "y"), crs = 4326)
 ```
-
 
 ```{r}
-plot(ph_0_30_sp)
+ph_0_30_sf
 ```
+
+```{r}
+plot(ph_0_30_sf)
+```
+
+```{r}
+ph_0_30_sp <- as(ph_0_30_sp, "Spatial")
+```
+
+
 
 ```{r}
 rasters_list <- list.files(path = "01_datos/covs_todas", full.names = TRUE)
@@ -523,17 +534,37 @@ rfokcv1
 ```
 
 ```{r}
-s_spdf <- as(s, "SpatialPixelsDataFrame")
+s_5 <- stack("01_datos/covs_todas/B07CHE3.tif", "01_datos/covs_todas/P03CHE3.tif", "01_datos/covs_todas/BLDFIE_M_sl3_1km_ll.tif", "01_datos/covs_todas/P01CHE3.tif", "01_datos/covs_todas/C04MCF5.tif")
 ```
 
 
 ```{r}
-m <- train.spLearner(meuse["lead"], covariates = s_spdf[,c("dist","ffreq")], lambda = 1)
+s_5_spdf <- as(s_5, "SpatialPixelsDataFrame")
+```
+
+```{r}
+m <- train.spLearner(ph_0_30_sp["ph"], covariates = s_5_spdf[ , c("B07CHE3", "P03CHE3", "BLDFIE_M_sl3_1km_ll", "P01CHE3", "C04MCF5")], lambda = 1)
 ```
 
 
+```{r}
+m
+```
+
+```{r}
+ph_0_30_pred <- predict(m)
+```
 
 
+```{r}
+plot(ph_0_30_pred)
+```
 
+plot(raster(meuse.y$pred["response"]), col=R_pal[["rainbow_75"]][4:20],
+   main="spLearner", axes=FALSE, box=FALSE)
+points(meuse, pch="+")
+plot(raster(meuse.y$pred["model.error"]), col=rev(bpy.colors()),
+   main="Model error", axes=FALSE, box=FALSE)
+points(meuse, pch="+")
 
 
