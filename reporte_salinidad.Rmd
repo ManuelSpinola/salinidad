@@ -1,0 +1,70 @@
+---
+title: "Mapa de salinidad"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+library(tidyverse)
+library(rio)
+library(sf)
+library(stars)
+library(rgdal)
+library(raster)
+library(rasterVis)
+library(terra)
+library(randomForest)
+library(ranger)
+library(caret)
+library(DALEX)
+library(ingredients)
+library(auditor)
+library(colorDF)
+library(CAST)
+library(landmap)
+library(mlr)
+library(mapview)
+library(patchwork)
+```
+
+<br>
+<br>
+<br>
+
+```{r, include=FALSE}
+mapa_salinidad_masked <- raster("rasters_salinidad/mapa_salinidad_masked.tif")
+```
+
+
+```{r, include=FALSE}
+mapa_salinidad_error_masked <- raster("rasters_salinidad/mapa_salinidad_error_masked.tif")
+```
+
+
+
+```{r, echo=FALSE}
+m1 <- gplot(mapa_salinidad_masked) +
+  theme_minimal() +
+  geom_tile(aes(fill = value)) +
+  scale_fill_viridis_c(name = "CE", na.value = "transparent") +
+  coord_equal()
+```
+
+```{r, echo=FALSE}
+m2 <- gplot(mapa_salinidad_error_masked) +
+  theme_minimal() +
+  geom_tile(aes(fill = value)) +
+  scale_fill_viridis_c(name = "Error del \nmodelo", na.value = "transparent") +
+  coord_equal()
+```
+
+
+```{r, echo=FALSE}
+m1 + m2
+```
+
+
+
+

@@ -1,5 +1,6 @@
 name: "salinidad"
 output_dir: "docs"
+exclude: ["reporte_salinidad.html"]
 navbar:
   title: "Salinidad"
   type: inverse
