@@ -57,11 +57,6 @@ plot(s, 150)
 ```
 
 
-```{r}
-raster.cor.matrix(s_mask)
-```
-
-
 ***
 
 ### stars
